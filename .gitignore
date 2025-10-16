@@ -1,0 +1,30 @@
+# Logs and runtime data
+logs/*.log
+logs/*.pid
+logs/output.log
+logs/status.json
+logs/stats.log
+
+# Screenshots (can be large)
+screenshots/*.png
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
