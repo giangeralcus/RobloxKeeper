@@ -6,34 +6,25 @@
   "status_check_interval_seconds": 30,
   "dashboard_update_interval_seconds": 300,
   "roblox_process_name": "RobloxPlayerBeta.exe",
-  "auto_relaunch": true,
+  "auto_relaunch": false,
   "game_load_wait_seconds": 15,
   "window_resize": {
-    "enabled": true,
+    "enabled": false,
     "width": 1280,
     "height": 720,
     "position_x": 100,
     "position_y": 100
   },
   "fixed_coordinates": {
-    "game_card_click": {
-      "x": 250,
-      "y": 400,
-      "description": "Anime Vanguards game card (first position on home)"
-    },
-    "play_button_click": {
-      "x": 950,
-      "y": 550,
-      "description": "Blue play button on game details page"
-    },
     "safe_afk_click": {
       "x": 640,
       "y": 360,
-      "description": "Center of screen for AFK prevention"
+      "description": "Center of screen for AFK prevention (relative to window)"
     }
   },
   "use_fixed_coordinates": true,
-  "fallback_to_detection": true,
+  "fallback_to_detection": false,
   "ocr_enabled": false,
-  "debug_mode": false
+  "debug_mode": false,
+  "afk_only_mode": true
 }

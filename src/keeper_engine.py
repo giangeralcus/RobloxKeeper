@@ -195,21 +195,38 @@ class AnimeVanguardsKeeper:
             return None
 
     def safe_click_roblox(self):
-        """Click safely in the center area of Roblox window"""
+        """Click safely to prevent AFK timeout"""
         window_info = self.get_window_rect()
         if not window_info:
             self.log_message("Could not get window info for clicking", "WARN")
             self.stats['status'] = 'warning'
             return False
 
-        # Click in the center of the window (safe area)
-        center_x = window_info['x'] + (window_info['width'] // 2)
-        center_y = window_info['y'] + (window_info['height'] // 2)
-
         # Activate window first
         if not self.activate_roblox():
             self.stats['status'] = 'warning'
             return False
+
+        # Check if using fixed coordinates
+        use_fixed = self.config.get('use_fixed_coordinates', True)
+
+        if use_fixed:
+            # Use configured AFK click position
+            fixed_coords = self.config.get('fixed_coordinates', {})
+            afk_click = fixed_coords.get('safe_afk_click', {})
+
+            relative_x = afk_click.get('x', window_info['width'] // 2)
+            relative_y = afk_click.get('y', window_info['height'] // 2)
+
+            # Calculate absolute coordinates
+            center_x = window_info['x'] + relative_x
+            center_y = window_info['y'] + relative_y
+
+            self.log_message(f"📍 Using FIXED position for AFK click", "INFO")
+        else:
+            # Use center of window
+            center_x = window_info['x'] + (window_info['width'] // 2)
+            center_y = window_info['y'] + (window_info['height'] // 2)
 
         # Double-click in center
         pyautogui.doubleClick(center_x, center_y)
@@ -218,7 +235,7 @@ class AnimeVanguardsKeeper:
         self.stats['last_click'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.stats['status'] = 'active'
 
-        self.log_message(f"✓ Double-clicked at center: ({center_x}, {center_y})")
+        self.log_message(f"✓ AFK prevention click at: ({center_x}, {center_y})")
         self.log_stats("CLICK", f"Position: ({center_x}, {center_y}), Total: {self.stats['total_clicks']}")
         self.save_stats()
 
@@ -866,20 +883,14 @@ class AnimeVanguardsKeeper:
         if not self.is_roblox_running():
             self.stats['roblox_crashes'] += 1
             self.stats['status'] = 'crashed'
-            self.log_message("❌ ALERT: Roblox crashed!", "CRITICAL")
+            self.log_message("❌ ALERT: Roblox closed!", "CRITICAL")
+            self.log_message("⚠️  Please restart Roblox and rejoin the game manually.", "WARN")
             self.log_stats("CRASH", f"Total crashes: {self.stats['roblox_crashes']}")
             self.save_stats()
 
-            # Attempt auto-relaunch if enabled
-            if self.config.get('auto_relaunch', True):
-                self.log_message("🔄 Attempting automatic relaunch...", "INFO")
-                if self.auto_relaunch_sequence():
-                    self.stats['status'] = 'active'
-                    self.save_stats()
-                    return True
-                else:
-                    self.log_message(f"⚠️  Auto-relaunch failed. Please manually restart Roblox and join {self.config.get('game_name', 'the game')}.", "WARN")
-                    return False
+            # Auto-relaunch disabled - user joins manually
+            # Just log and wait for user to restart
+            return False
         return True
 
     def start(self):
