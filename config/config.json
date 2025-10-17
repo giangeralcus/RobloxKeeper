@@ -8,6 +8,9 @@
   "roblox_process_name": "RobloxPlayerBeta.exe",
   "auto_relaunch": false,
   "game_load_wait_seconds": 15,
+  "background_mode": true,
+  "restore_focus_after_click": true,
+  "minimize_on_start": false,
   "window_resize": {
     "enabled": false,
     "width": 1280,

@@ -181,11 +181,17 @@ class KeeperGUI:
 
         # Add initial welcome message
         self.add_log("=" * 80)
-        self.add_log("🎮 ANIME VANGUARDS KEEPER - WINDOWS EDITION")
+        self.add_log("🎮 ANIME VANGUARDS KEEPER - BACKGROUND MODE")
         self.add_log("=" * 80)
-        self.add_log("Welcome! Click START to begin monitoring.")
-        self.add_log(f"Base Directory: {self.base_dir}")
-        self.add_log(f"Config: {self.config_path}")
+        self.add_log("This keeper works in the BACKGROUND!")
+        self.add_log("You can continue working while it runs.")
+        self.add_log("")
+        self.add_log("How it works:")
+        self.add_log("  1. Keeper runs in background")
+        self.add_log("  2. Every 18 min: Briefly activates Roblox, clicks, returns focus")
+        self.add_log("  3. You continue your work uninterrupted")
+        self.add_log("")
+        self.add_log("Click START when Roblox is in AFK chamber!")
         self.add_log("=" * 80)
 
         # === STATUS BAR ===

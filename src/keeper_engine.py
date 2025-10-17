@@ -195,17 +195,26 @@ class AnimeVanguardsKeeper:
             return None
 
     def safe_click_roblox(self):
-        """Click safely to prevent AFK timeout"""
+        """Click safely to prevent AFK timeout - works in background"""
         window_info = self.get_window_rect()
         if not window_info:
             self.log_message("Could not get window info for clicking", "WARN")
             self.stats['status'] = 'warning'
             return False
 
-        # Activate window first
+        # Remember current active window to restore later
+        import pygetwindow as gw
+        try:
+            current_window = gw.getActiveWindow()
+        except:
+            current_window = None
+
+        # Briefly activate Roblox window
         if not self.activate_roblox():
             self.stats['status'] = 'warning'
             return False
+
+        time.sleep(0.3)  # Brief pause for window to activate
 
         # Check if using fixed coordinates
         use_fixed = self.config.get('use_fixed_coordinates', True)
@@ -222,7 +231,7 @@ class AnimeVanguardsKeeper:
             center_x = window_info['x'] + relative_x
             center_y = window_info['y'] + relative_y
 
-            self.log_message(f"📍 Using FIXED position for AFK click", "INFO")
+            self.log_message(f"📍 Background click at FIXED position", "INFO")
         else:
             # Use center of window
             center_x = window_info['x'] + (window_info['width'] // 2)
@@ -238,6 +247,15 @@ class AnimeVanguardsKeeper:
         self.log_message(f"✓ AFK prevention click at: ({center_x}, {center_y})")
         self.log_stats("CLICK", f"Position: ({center_x}, {center_y}), Total: {self.stats['total_clicks']}")
         self.save_stats()
+
+        # Restore previous window focus (return to your work)
+        time.sleep(0.2)
+        if current_window:
+            try:
+                current_window.activate()
+                self.log_message(f"↩️  Returned focus to: {current_window.title}", "INFO")
+            except:
+                pass
 
         return True
 
