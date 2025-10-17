@@ -146,6 +146,38 @@ class AnimeVanguardsKeeper:
             self.log_message(f"Error activating Roblox: {e}", "ERROR")
             return False
 
+    def resize_roblox_window(self):
+        """Resize Roblox window to standard size for fixed coordinates"""
+        try:
+            resize_config = self.config.get('window_resize', {})
+
+            if not resize_config.get('enabled', False):
+                self.log_message("Window resize disabled in config", "INFO")
+                return True
+
+            window = self.get_roblox_window()
+            if not window:
+                self.log_message("Cannot resize: Roblox window not found", "WARN")
+                return False
+
+            target_width = resize_config.get('width', 1280)
+            target_height = resize_config.get('height', 720)
+            target_x = resize_config.get('position_x', 100)
+            target_y = resize_config.get('position_y', 100)
+
+            # Move and resize window
+            window.moveTo(target_x, target_y)
+            window.resizeTo(target_width, target_height)
+
+            time.sleep(0.5)
+
+            self.log_message(f"✓ Resized Roblox to {target_width}x{target_height} at ({target_x}, {target_y})", "INFO")
+            return True
+
+        except Exception as e:
+            self.log_message(f"Error resizing window: {e}", "WARN")
+            return False
+
     def get_window_rect(self):
         """Get Roblox window position and size"""
         try:
@@ -284,10 +316,8 @@ class AnimeVanguardsKeeper:
             return False
 
     def find_and_click_game(self, game_name):
-        """Find and click game using OCR text recognition"""
+        """Find and click game using fixed coordinates or detection fallback"""
         try:
-            self.log_message(f"🔍 Searching for '{game_name}' using OCR...", "INFO")
-
             # Wait for Roblox to load
             wait_time = self.config.get('game_load_wait_seconds', 15)
             for i in range(wait_time, 0, -1):
@@ -295,8 +325,12 @@ class AnimeVanguardsKeeper:
                 if self.log_callback:
                     self.log_callback(f"⏳ Waiting for Roblox to load... {i}s")
 
-            # Activate Roblox
+            # Activate and resize Roblox window
             self.activate_roblox()
+            time.sleep(0.5)
+
+            # Resize window to standard size
+            self.resize_roblox_window()
             time.sleep(1)
 
             window_info = self.get_window_rect()
@@ -304,42 +338,103 @@ class AnimeVanguardsKeeper:
                 self.log_message("Could not get Roblox window info", "ERROR")
                 return False
 
-            # Take screenshot for OCR analysis
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            screenshot_path = os.path.join(self.screenshot_dir, f"game_search_{timestamp}.png")
+            # Check if we should use fixed coordinates
+            use_fixed = self.config.get('use_fixed_coordinates', True)
 
-            with mss.mss() as sct:
-                monitor = {
-                    "left": window_info['x'],
-                    "top": window_info['y'],
-                    "width": window_info['width'],
-                    "height": window_info['height']
-                }
-                screenshot = sct.grab(monitor)
-                img = Image.frombytes('RGB', screenshot.size, screenshot.rgb)
-                img.save(screenshot_path)
+            if use_fixed:
+                self.log_message(f"📍 Using FIXED COORDINATES to find '{game_name}'", "INFO")
 
-            self.log_message(f"📸 Captured search screen: {screenshot_path}", "INFO")
+                # Get fixed coordinates from config
+                fixed_coords = self.config.get('fixed_coordinates', {})
+                game_click = fixed_coords.get('game_card_click', {})
 
-            # Try OCR to find game text
-            game_location = self.find_text_in_image(screenshot_path, game_name, window_info)
+                relative_x = game_click.get('x', 250)
+                relative_y = game_click.get('y', 400)
 
-            if game_location:
-                click_x, click_y = game_location
-                self.log_message(f"✓ Found '{game_name}' at: ({click_x}, {click_y})", "INFO")
+                # Calculate absolute coordinates
+                click_x = window_info['x'] + relative_x
+                click_y = window_info['y'] + relative_y
+
+                self.log_message(f"✓ Clicking game at FIXED position: ({click_x}, {click_y})", "INFO")
+                self.log_message(f"   Description: {game_click.get('description', 'N/A')}", "INFO")
+
                 pyautogui.click(click_x, click_y)
                 time.sleep(1.5)
 
-                # Now find and click the blue play button
-                return self.click_play_button(window_info)
+                # Click play button with fixed coordinates
+                return self.click_play_button_fixed(window_info)
             else:
-                self.log_message(f"⚠️  Could not find '{game_name}' via OCR, trying pattern matching...", "WARN")
+                # Fallback to detection methods
+                self.log_message(f"🔍 Using DETECTION to find '{game_name}'", "INFO")
 
-                # Fallback: Try to find by looking for game card pattern
-                return self.find_game_by_pattern(screenshot_path, window_info)
+                # Take screenshot for analysis
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                screenshot_path = os.path.join(self.screenshot_dir, f"game_search_{timestamp}.png")
+
+                with mss.mss() as sct:
+                    monitor = {
+                        "left": window_info['x'],
+                        "top": window_info['y'],
+                        "width": window_info['width'],
+                        "height": window_info['height']
+                    }
+                    screenshot = sct.grab(monitor)
+                    img = Image.frombytes('RGB', screenshot.size, screenshot.rgb)
+                    img.save(screenshot_path)
+
+                self.log_message(f"📸 Captured search screen: {screenshot_path}", "INFO")
+
+                # Try detection methods
+                game_location = self.find_text_in_image(screenshot_path, game_name, window_info)
+
+                if game_location:
+                    click_x, click_y = game_location
+                    self.log_message(f"✓ Found '{game_name}' at: ({click_x}, {click_y})", "INFO")
+                    pyautogui.click(click_x, click_y)
+                    time.sleep(1.5)
+                    return self.click_play_button(window_info)
+                else:
+                    return self.find_game_by_pattern(screenshot_path, window_info)
 
         except Exception as e:
             self.log_message(f"Error finding/clicking game: {e}", "ERROR")
+            return False
+
+    def click_play_button_fixed(self, window_info):
+        """Click play button using fixed coordinates"""
+        try:
+            self.log_message("▶️  Clicking play button with FIXED COORDINATES", "INFO")
+
+            # Get fixed coordinates from config
+            fixed_coords = self.config.get('fixed_coordinates', {})
+            play_click = fixed_coords.get('play_button_click', {})
+
+            relative_x = play_click.get('x', 950)
+            relative_y = play_click.get('y', 550)
+
+            # Calculate absolute coordinates
+            click_x = window_info['x'] + relative_x
+            click_y = window_info['y'] + relative_y
+
+            self.log_message(f"✓ Clicking play button at: ({click_x}, {click_y})", "INFO")
+            self.log_message(f"   Description: {play_click.get('description', 'N/A')}", "INFO")
+
+            pyautogui.click(click_x, click_y)
+            time.sleep(2)
+
+            self.log_message("✓ Game launch sequence completed", "INFO")
+            self.log_stats("AUTO_RELAUNCH", f"Rejoined {self.config.get('game_name', 'game')}")
+
+            return True
+
+        except Exception as e:
+            self.log_message(f"Error clicking play button: {e}", "ERROR")
+
+            # Fallback to detection if enabled
+            if self.config.get('fallback_to_detection', True):
+                self.log_message("⚠️  Falling back to detection method", "WARN")
+                return self.click_play_button(window_info)
+
             return False
 
     def find_text_in_image(self, image_path, search_text, window_info):
