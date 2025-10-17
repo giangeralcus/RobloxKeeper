@@ -1,0 +1,100 @@
+╔══════════════════════════════════════════════════════════════════╗
+║         🎮 ANIME VANGUARDS KEEPER - QUICK START GUIDE            ║
+╚══════════════════════════════════════════════════════════════════╝
+
+📋 3-STEP SETUP:
+
+  STEP 1: INSTALL
+  ─────────────────
+  Double-click: install.bat
+
+  This installs all required Python packages.
+  Wait for "INSTALLATION COMPLETE!" message.
+
+
+  STEP 2: START ROBLOX
+  ────────────────────
+  1. Launch Roblox
+  2. Join "Anime Vanguards" game
+  3. Enter your AFK chamber or desired location
+
+
+  STEP 3: START KEEPER
+  ────────────────────
+  Double-click: START_KEEPER.bat
+
+  The GUI will open. Click the "▶️ START" button.
+
+
+═══════════════════════════════════════════════════════════════════
+
+🖥️  GUI CONTROLS:
+
+  ▶️  START        Start monitoring (Roblox must be running)
+  ⏸️  PAUSE        Pause/Resume monitoring
+  ⏹️  STOP         Stop monitoring completely
+  🗑️  CLEAR LOG    Clear the activity log
+
+
+═══════════════════════════════════════════════════════════════════
+
+📊 WHAT IT DOES:
+
+  ✅ Clicks every 18 minutes to prevent AFK timeout
+  ✅ Takes screenshots every hour for tracking progress
+  ✅ Automatically dismisses error dialogs every 15 seconds
+  ✅ Detects if Roblox crashes
+  ✅ Auto-relaunches Roblox and rejoins Anime Vanguards
+  ✅ Displays real-time statistics in the GUI
+
+
+═══════════════════════════════════════════════════════════════════
+
+📁 IMPORTANT FILES:
+
+  START_KEEPER.bat       ← Click this to launch
+  config/config.json     ← Customize settings here
+  logs/keeper.log        ← View activity history
+  screenshots/           ← Hourly game screenshots
+
+
+═══════════════════════════════════════════════════════════════════
+
+⚙️  CUSTOMIZATION:
+
+  Edit config/config.json to change:
+
+  - Click interval (default: 18 minutes)
+  - Screenshot interval (default: 1 hour)
+  - Auto-relaunch on/off
+  - Game name to search for
+
+
+═══════════════════════════════════════════════════════════════════
+
+🐛 TROUBLESHOOTING:
+
+  ❌ "Python is not installed"
+     → Install Python 3.8+ from python.org
+     → Make sure to check "Add to PATH"
+
+  ❌ "Roblox Not Running"
+     → Start Roblox first, then click START
+
+  ❌ Application crashes
+     → Check logs/keeper.log for errors
+     → Make sure all dependencies installed
+
+
+═══════════════════════════════════════════════════════════════════
+
+📖 FULL DOCUMENTATION:
+
+  Read README_WINDOWS.md for complete details
+
+
+═══════════════════════════════════════════════════════════════════
+
+Created: October 17, 2025
+Version: 3.0 Windows GUI Edition
+Game: Anime Vanguards on Roblox

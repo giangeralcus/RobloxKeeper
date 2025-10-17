@@ -1,0 +1,23 @@
+{
+  "game_name": "Anime Vanguards",
+  "click_interval_minutes": 18,
+  "screenshot_interval_seconds": 3600,
+  "error_check_interval_seconds": 15,
+  "status_check_interval_seconds": 30,
+  "dashboard_update_interval_seconds": 300,
+  "roblox_process_name": "RobloxPlayerBeta.exe",
+  "auto_relaunch": true,
+  "game_load_wait_seconds": 15,
+  "play_button_color": {
+    "r": 52,
+    "g": 152,
+    "b": 219,
+    "tolerance": 30
+  },
+  "click_safe_zone": {
+    "offset_x_percent": 0.5,
+    "offset_y_percent": 0.5
+  },
+  "ocr_enabled": true,
+  "debug_mode": false
+}
