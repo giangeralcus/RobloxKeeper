@@ -8,7 +8,7 @@ echo ========================================
 echo.
 
 REM Check if Python is installed
-python --version >nul 2>&1
+py --version >nul 2>&1
 if %errorlevel% neq 0 (
     echo [ERROR] Python is not installed!
     echo Please install Python 3.8 or higher from https://www.python.org/
@@ -17,13 +17,14 @@ if %errorlevel% neq 0 (
 )
 
 echo [OK] Python is installed
+py --version
 echo.
 
 REM Install required packages
 echo Installing required packages...
 echo.
 
-pip install -r requirements.txt
+py -m pip install -r requirements.txt
 
 if %errorlevel% neq 0 (
     echo.
@@ -40,7 +41,7 @@ echo ========================================
 echo.
 echo You can now run the keeper using:
 echo   - Double-click "START_KEEPER.bat"
-echo   - Or run: python src\gui_app.py
+echo   - Or run: py src\gui_app.py
 echo.
 echo Make sure to:
 echo   1. Start Roblox first

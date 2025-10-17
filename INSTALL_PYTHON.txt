@@ -1,0 +1,92 @@
+╔══════════════════════════════════════════════════════════════════╗
+║           🐍 PYTHON INSTALLATION GUIDE FOR WINDOWS               ║
+╚══════════════════════════════════════════════════════════════════╝
+
+METHOD 1: Microsoft Store (Easiest)
+═══════════════════════════════════════════════════════════════════
+
+1. Press Windows Key
+2. Type "Microsoft Store"
+3. Search for "Python 3.12"
+4. Click "Get" or "Install"
+5. Wait for installation
+6. Open Command Prompt and type: python --version
+
+
+METHOD 2: Python.org Download
+═══════════════════════════════════════════════════════════════════
+
+1. Go to: https://www.python.org/downloads/
+2. Click "Download Python 3.12.x" (big yellow button)
+3. Run the downloaded installer
+4. ⚠️  IMPORTANT: CHECK "Add Python to PATH" ⚠️
+5. Click "Install Now"
+6. Wait for installation
+7. Restart Command Prompt
+8. Type: python --version
+
+
+METHOD 3: Chocolatey (For Advanced Users)
+═══════════════════════════════════════════════════════════════════
+
+1. Open PowerShell as Administrator
+2. Run: choco install python
+3. Wait for installation
+4. Type: python --version
+
+
+VERIFY INSTALLATION
+═══════════════════════════════════════════════════════════════════
+
+Open Command Prompt and run these commands:
+
+  python --version
+
+Should show: Python 3.12.x or Python 3.11.x
+
+  pip --version
+
+Should show: pip 24.x.x or similar
+
+
+TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════════
+
+❌ "python is not recognized"
+   Solution: You forgot to check "Add Python to PATH"
+   Fix: Reinstall Python and CHECK the PATH option
+
+❌ Old Python version (3.7 or lower)
+   Solution: Uninstall old Python first
+   Then: Install Python 3.12 from python.org
+
+❌ Permission denied
+   Solution: Right-click installer → "Run as Administrator"
+
+
+AFTER PYTHON IS INSTALLED
+═══════════════════════════════════════════════════════════════════
+
+1. Close and reopen Command Prompt
+2. Navigate to RobloxKeeper folder
+3. Double-click: install.bat
+4. Wait for "INSTALLATION COMPLETE!"
+5. Double-click: START_KEEPER.bat
+
+
+NEXT STEPS
+═══════════════════════════════════════════════════════════════════
+
+Once Python is installed:
+
+  Step 1: Run install.bat
+  Step 2: Start Roblox → Join Anime Vanguards
+  Step 3: Run START_KEEPER.bat
+  Step 4: Click START button in GUI
+
+
+═══════════════════════════════════════════════════════════════════
+
+Need help? Check:
+- Python official docs: https://docs.python.org/3/
+- Windows installation guide: https://docs.python.org/3/using/windows.html

@@ -13,7 +13,7 @@ echo.
 echo Starting GUI application...
 echo.
 
-python src\gui_app.py
+py src\gui_app.py
 
 if %errorlevel% neq 0 (
     echo.

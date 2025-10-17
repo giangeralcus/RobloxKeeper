@@ -1,0 +1,98 @@
+╔══════════════════════════════════════════════════════════════════╗
+║           📝 TESSERACT OCR SETUP (OPTIONAL BUT RECOMMENDED)      ║
+╚══════════════════════════════════════════════════════════════════╝
+
+WHY INSTALL TESSERACT?
+═══════════════════════════════════════════════════════════════════
+
+With Tesseract OCR installed, the keeper will:
+✅ Read text on screen to find "ANIME VANGUARDS" specifically
+✅ Avoid clicking wrong games
+✅ More accurate game detection
+✅ Works even if game position changes
+
+
+WITHOUT TESSERACT:
+═══════════════════════════════════════════════════════════════════
+
+The keeper will use fallback methods:
+⚠️  Green dragon color pattern detection
+⚠️  Default position clicking
+⚠️  May click wrong game if layout changes
+
+
+INSTALLATION STEPS:
+═══════════════════════════════════════════════════════════════════
+
+METHOD 1: Auto-Installer (Easiest)
+────────────────────────────────────────────────────────────────────
+1. Double-click: INSTALL_TESSERACT.bat
+2. Download the installer from the page that opens
+3. Look for: "tesseract-ocr-w64-setup-5.3.x.exe"
+4. Run the installer
+5. Follow installation wizard
+6. Done!
+
+
+METHOD 2: Manual Download
+────────────────────────────────────────────────────────────────────
+1. Go to: https://github.com/UB-Mannheim/tesseract/wiki
+2. Download: tesseract-ocr-w64-setup-5.3.x.exe
+3. Run installer
+4. Install to: C:\Program Files\Tesseract-OCR
+5. Done!
+
+
+METHOD 3: Winget (Advanced)
+────────────────────────────────────────────────────────────────────
+Open PowerShell as Administrator:
+
+  winget install UB-Mannheim.Tesseract
+
+
+VERIFICATION:
+═══════════════════════════════════════════════════════════════════
+
+After installation, open NEW Command Prompt:
+
+  tesseract --version
+
+Should show: tesseract 5.3.x
+
+
+CONFIGURATION (If needed):
+═══════════════════════════════════════════════════════════════════
+
+If pytesseract can't find Tesseract, add to PATH:
+
+Windows Search → "Environment Variables"
+→ System Variables → Path → Edit
+→ New → C:\Program Files\Tesseract-OCR
+→ OK
+
+
+TESTING THE KEEPER WITH OCR:
+═══════════════════════════════════════════════════════════════════
+
+1. Install Tesseract
+2. Restart START_KEEPER.bat
+3. Watch the logs - you should see:
+   "📝 OCR found text: 'ANIME' at (x, y)"
+4. It will click EXACTLY on "ANIME VANGUARDS" text!
+
+
+WITHOUT OCR INSTALLED:
+═══════════════════════════════════════════════════════════════════
+
+The keeper will still work! It will show:
+"⚠️ pytesseract not available, using pattern matching"
+
+Then it will use:
+- Green dragon color detection (fallback method)
+- Works but less accurate
+
+
+═══════════════════════════════════════════════════════════════════
+
+RECOMMENDATION: Install Tesseract for best accuracy!
+But the keeper works without it too using visual patterns.

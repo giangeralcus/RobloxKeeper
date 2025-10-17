@@ -284,9 +284,9 @@ class AnimeVanguardsKeeper:
             return False
 
     def find_and_click_game(self, game_name):
-        """Find and click game using OCR or color detection"""
+        """Find and click game using OCR text recognition"""
         try:
-            self.log_message(f"🔍 Searching for {game_name}...", "INFO")
+            self.log_message(f"🔍 Searching for '{game_name}' using OCR...", "INFO")
 
             # Wait for Roblox to load
             wait_time = self.config.get('game_load_wait_seconds', 15)
@@ -304,7 +304,7 @@ class AnimeVanguardsKeeper:
                 self.log_message("Could not get Roblox window info", "ERROR")
                 return False
 
-            # Take screenshot for analysis
+            # Take screenshot for OCR analysis
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             screenshot_path = os.path.join(self.screenshot_dir, f"game_search_{timestamp}.png")
 
@@ -316,27 +316,128 @@ class AnimeVanguardsKeeper:
                     "height": window_info['height']
                 }
                 screenshot = sct.grab(monitor)
-                mss.tools.to_png(screenshot.rgb, screenshot.size, output=screenshot_path)
+                img = Image.frombytes('RGB', screenshot.size, screenshot.rgb)
+                img.save(screenshot_path)
 
             self.log_message(f"📸 Captured search screen: {screenshot_path}", "INFO")
 
-            # Try clicking in common game locations
-            center_x = window_info['x'] + (window_info['width'] // 2)
-            center_y = window_info['y'] + (window_info['height'] // 2)
+            # Try OCR to find game text
+            game_location = self.find_text_in_image(screenshot_path, game_name, window_info)
 
-            # Click potential game location (center-left area where games usually appear)
-            click_x = center_x - 100
-            click_y = center_y + 50
+            if game_location:
+                click_x, click_y = game_location
+                self.log_message(f"✓ Found '{game_name}' at: ({click_x}, {click_y})", "INFO")
+                pyautogui.click(click_x, click_y)
+                time.sleep(1.5)
 
-            self.log_message(f"🎮 Clicking game location: ({click_x}, {click_y})", "INFO")
-            pyautogui.click(click_x, click_y)
-            time.sleep(1)
+                # Now find and click the blue play button
+                return self.click_play_button(window_info)
+            else:
+                self.log_message(f"⚠️  Could not find '{game_name}' via OCR, trying pattern matching...", "WARN")
 
-            # Now find and click the blue play button
-            return self.click_play_button(window_info)
+                # Fallback: Try to find by looking for game card pattern
+                return self.find_game_by_pattern(screenshot_path, window_info)
 
         except Exception as e:
             self.log_message(f"Error finding/clicking game: {e}", "ERROR")
+            return False
+
+    def find_text_in_image(self, image_path, search_text, window_info):
+        """Use OCR to find text in image and return click coordinates"""
+        try:
+            import pytesseract
+
+            # Load image
+            img = cv2.imread(image_path)
+
+            # Preprocess image for better OCR
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+            # Use pytesseract to get text with bounding boxes
+            data = pytesseract.image_to_data(gray, output_type=pytesseract.Output.DICT)
+
+            # Search for the game name in OCR results
+            search_words = search_text.upper().split()
+            found_boxes = []
+
+            for i, text in enumerate(data['text']):
+                if text.strip().upper() in search_words:
+                    found_boxes.append({
+                        'x': data['left'][i],
+                        'y': data['top'][i],
+                        'w': data['width'][i],
+                        'h': data['height'][i],
+                        'text': text
+                    })
+
+            if found_boxes:
+                # Get the center of the first matching text
+                box = found_boxes[0]
+                center_x = window_info['x'] + box['x'] + (box['w'] // 2)
+                center_y = window_info['y'] + box['y'] + (box['h'] // 2)
+
+                self.log_message(f"📝 OCR found text: '{box['text']}' at ({center_x}, {center_y})", "INFO")
+                return (center_x, center_y)
+
+            return None
+
+        except ImportError:
+            self.log_message("⚠️  pytesseract not available, using pattern matching", "WARN")
+            return None
+        except Exception as e:
+            self.log_message(f"OCR error: {e}", "WARN")
+            return None
+
+    def find_game_by_pattern(self, screenshot_path, window_info):
+        """Fallback: Find game by visual pattern (green dragon artwork)"""
+        try:
+            self.log_message("🔍 Searching for game by visual pattern...", "INFO")
+
+            img = cv2.imread(screenshot_path)
+            img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+            # Look for green colors (dragon artwork)
+            lower_green = np.array([35, 40, 40])
+            upper_green = np.array([85, 255, 255])
+
+            mask_green = cv2.inRange(img_hsv, lower_green, upper_green)
+
+            # Find contours
+            contours, _ = cv2.findContours(mask_green, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            if contours:
+                # Find largest green area (game card with dragon)
+                largest_contour = max(contours, key=cv2.contourArea)
+                M = cv2.moments(largest_contour)
+
+                if M["m00"] != 0:
+                    cx = int(M["m10"] / M["m00"])
+                    cy = int(M["m01"] / M["m00"])
+
+                    click_x = window_info['x'] + cx
+                    click_y = window_info['y'] + cy
+
+                    self.log_message(f"✓ Found game card (green pattern) at: ({click_x}, {click_y})", "INFO")
+                    pyautogui.click(click_x, click_y)
+                    time.sleep(1.5)
+
+                    return self.click_play_button(window_info)
+
+            # Last resort: click default position
+            self.log_message("⚠️  Using default click position", "WARN")
+            center_x = window_info['x'] + (window_info['width'] // 2)
+            center_y = window_info['y'] + (window_info['height'] // 2)
+
+            click_x = center_x - 100
+            click_y = center_y + 50
+
+            pyautogui.click(click_x, click_y)
+            time.sleep(1.5)
+
+            return self.click_play_button(window_info)
+
+        except Exception as e:
+            self.log_message(f"Pattern matching error: {e}", "ERROR")
             return False
 
     def click_play_button(self, window_info):
