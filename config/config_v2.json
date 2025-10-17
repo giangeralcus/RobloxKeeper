@@ -1,0 +1,78 @@
+{
+  "game_name": "Anime Vanguards",
+  "click_interval_minutes": 18,
+  "screenshot_interval_seconds": 3600,
+  "error_check_interval_seconds": 15,
+  "status_check_interval_seconds": 30,
+  "dashboard_update_interval_seconds": 300,
+  "roblox_process_name": "RobloxPlayerBeta.exe",
+  "auto_relaunch": false,
+  "game_load_wait_seconds": 15,
+  "background_mode": true,
+  "restore_focus_after_click": true,
+  "minimize_on_start": false,
+
+  "window_resize": {
+    "enabled": false,
+    "width": 1280,
+    "height": 720,
+    "position_x": 100,
+    "position_y": 100
+  },
+
+  "fixed_coordinates": {
+    "safe_afk_click": {
+      "x": 640,
+      "y": 360,
+      "description": "Center of screen for AFK prevention (relative to window)"
+    }
+  },
+
+  "use_fixed_coordinates": true,
+  "fallback_to_detection": false,
+  "ocr_enabled": false,
+  "debug_mode": false,
+  "afk_only_mode": true,
+
+  "_comment_v2": "=== NEW V2 FEATURES ===",
+
+  "click_method_priority": [
+    "postmessage",
+    "sendmessage",
+    "directinput",
+    "pyautogui"
+  ],
+
+  "humanization_enabled": true,
+  "humanization": {
+    "position_variance": 10,
+    "timing_variance": 0.05,
+    "double_click_chance": 0.3,
+    "_comment": "position_variance: pixels to randomize (+/-), timing_variance: seconds (+/-), double_click_chance: 0.0-1.0"
+  },
+
+  "click_method_config": {
+    "postmessage": {
+      "enabled": true,
+      "description": "Fastest, async, true background"
+    },
+    "sendmessage": {
+      "enabled": true,
+      "description": "Reliable, sync, true background"
+    },
+    "directinput": {
+      "enabled": true,
+      "description": "Game-compatible, hardware-level"
+    },
+    "pyautogui": {
+      "enabled": true,
+      "description": "Fallback, requires window activation"
+    }
+  },
+
+  "performance_tracking": {
+    "enabled": true,
+    "log_method_stats": true,
+    "log_timing_stats": true
+  }
+}
