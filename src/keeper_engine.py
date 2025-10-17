@@ -343,49 +343,187 @@ class AnimeVanguardsKeeper:
             return False
 
     def find_text_in_image(self, image_path, search_text, window_info):
-        """Use OCR to find text in image and return click coordinates"""
+        """Use multiple detection methods to find the game with voting system"""
+        try:
+            img = cv2.imread(image_path)
+
+            detection_votes = []
+
+            # Method 1: Look for star rating pattern (⭐ 8.5)
+            star_location = self.detect_star_rating(img)
+            if star_location:
+                detection_votes.append(('star_rating', star_location))
+                self.log_message(f"✅ Method 1: Found star rating at {star_location}", "INFO")
+
+            # Method 2: Detect purple/blue gradient text (ANIME VANGUARDS title)
+            gradient_location = self.detect_gradient_text(img)
+            if gradient_location:
+                detection_votes.append(('gradient_text', gradient_location))
+                self.log_message(f"✅ Method 2: Found gradient text at {gradient_location}", "INFO")
+
+            # Method 3: Green dragon artwork detection (improved)
+            dragon_location = self.detect_green_dragon(img)
+            if dragon_location:
+                detection_votes.append(('green_dragon', dragon_location))
+                self.log_message(f"✅ Method 3: Found green dragon at {dragon_location}", "INFO")
+
+            # Method 4: Try OCR if available
+            try:
+                import pytesseract
+                ocr_location = self.detect_with_ocr(img, search_text)
+                if ocr_location:
+                    detection_votes.append(('ocr', ocr_location))
+                    self.log_message(f"✅ Method 4: OCR found text at {ocr_location}", "INFO")
+            except:
+                pass
+
+            # Voting: Use the most common location
+            if detection_votes:
+                # Average all detected locations
+                avg_x = sum(loc[0] for _, loc in detection_votes) // len(detection_votes)
+                avg_y = sum(loc[1] for _, loc in detection_votes) // len(detection_votes)
+
+                final_x = window_info['x'] + avg_x
+                final_y = window_info['y'] + avg_y
+
+                self.log_message(f"🎯 VOTING RESULT: {len(detection_votes)} methods agree!", "INFO")
+                self.log_message(f"📍 Final location: ({final_x}, {final_y})", "INFO")
+
+                return (final_x, final_y)
+
+            return None
+
+        except Exception as e:
+            self.log_message(f"Multi-detection error: {e}", "WARN")
+            return None
+
+    def detect_star_rating(self, img):
+        """Detect the ⭐ 8.5 rating badge"""
+        try:
+            # Convert to HSV
+            hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+            # Yellow color range for star
+            lower_yellow = np.array([20, 100, 100])
+            upper_yellow = np.array([30, 255, 255])
+
+            mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
+
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            if contours:
+                # Find star-shaped contours (small area in top-left of game card)
+                for contour in contours:
+                    area = cv2.contourArea(contour)
+                    if 50 < area < 500:  # Star is small
+                        M = cv2.moments(contour)
+                        if M["m00"] != 0:
+                            cx = int(M["m10"] / M["m00"])
+                            cy = int(M["m01"] / M["m00"])
+                            # Game card is below and to the right of star
+                            return (cx + 50, cy + 80)
+
+            return None
+        except:
+            return None
+
+    def detect_gradient_text(self, img):
+        """Detect purple/blue gradient text (ANIME VANGUARDS title)"""
+        try:
+            hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+            # Purple/blue color range
+            lower_purple = np.array([120, 50, 50])
+            upper_purple = np.array([150, 255, 255])
+
+            mask = cv2.inRange(hsv, lower_purple, upper_purple)
+
+            # Find large text areas
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            if contours:
+                # Find largest purple area (title text)
+                large_contours = [c for c in contours if cv2.contourArea(c) > 200]
+
+                if large_contours:
+                    largest = max(large_contours, key=cv2.contourArea)
+                    M = cv2.moments(largest)
+                    if M["m00"] != 0:
+                        cx = int(M["m10"] / M["m00"])
+                        cy = int(M["m01"] / M["m00"])
+                        return (cx, cy + 30)  # Click slightly below text
+
+            return None
+        except:
+            return None
+
+    def detect_green_dragon(self, img):
+        """Enhanced green dragon artwork detection"""
+        try:
+            hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+            # Multiple green ranges for better detection
+            masks = []
+
+            # Bright green
+            lower_green1 = np.array([35, 80, 80])
+            upper_green1 = np.array([85, 255, 255])
+            masks.append(cv2.inRange(hsv, lower_green1, upper_green1))
+
+            # Dark green
+            lower_green2 = np.array([35, 40, 40])
+            upper_green2 = np.array([85, 255, 150])
+            masks.append(cv2.inRange(hsv, lower_green2, upper_green2))
+
+            # Combine masks
+            combined_mask = masks[0]
+            for mask in masks[1:]:
+                combined_mask = cv2.bitwise_or(combined_mask, mask)
+
+            # Find large green areas (dragon artwork)
+            contours, _ = cv2.findContours(combined_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            if contours:
+                # Find largest green area
+                large_contours = [c for c in contours if cv2.contourArea(c) > 1000]
+
+                if large_contours:
+                    largest = max(large_contours, key=cv2.contourArea)
+                    M = cv2.moments(largest)
+                    if M["m00"] != 0:
+                        cx = int(M["m10"] / M["m00"])
+                        cy = int(M["m01"] / M["m00"])
+                        return (cx, cy)
+
+            return None
+        except:
+            return None
+
+    def detect_with_ocr(self, img, search_text):
+        """OCR detection if pytesseract is available"""
         try:
             import pytesseract
 
-            # Load image
-            img = cv2.imread(image_path)
-
-            # Preprocess image for better OCR
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-            # Use pytesseract to get text with bounding boxes
+            # Enhance contrast for better OCR
+            gray = cv2.equalizeHist(gray)
+
             data = pytesseract.image_to_data(gray, output_type=pytesseract.Output.DICT)
 
-            # Search for the game name in OCR results
             search_words = search_text.upper().split()
-            found_boxes = []
 
             for i, text in enumerate(data['text']):
                 if text.strip().upper() in search_words:
-                    found_boxes.append({
-                        'x': data['left'][i],
-                        'y': data['top'][i],
-                        'w': data['width'][i],
-                        'h': data['height'][i],
-                        'text': text
-                    })
+                    x = data['left'][i]
+                    y = data['top'][i]
+                    w = data['width'][i]
+                    h = data['height'][i]
 
-            if found_boxes:
-                # Get the center of the first matching text
-                box = found_boxes[0]
-                center_x = window_info['x'] + box['x'] + (box['w'] // 2)
-                center_y = window_info['y'] + box['y'] + (box['h'] // 2)
-
-                self.log_message(f"📝 OCR found text: '{box['text']}' at ({center_x}, {center_y})", "INFO")
-                return (center_x, center_y)
+                    return (x + w//2, y + h//2)
 
             return None
-
-        except ImportError:
-            self.log_message("⚠️  pytesseract not available, using pattern matching", "WARN")
-            return None
-        except Exception as e:
-            self.log_message(f"OCR error: {e}", "WARN")
+        except:
             return None
 
     def find_game_by_pattern(self, screenshot_path, window_info):
@@ -441,9 +579,9 @@ class AnimeVanguardsKeeper:
             return False
 
     def click_play_button(self, window_info):
-        """Find and click the blue play button using color detection"""
+        """Find and click the blue play button using multi-method detection"""
         try:
-            self.log_message("▶️  Searching for play button...", "INFO")
+            self.log_message("▶️  Searching for play button with enhanced detection...", "INFO")
 
             # Take another screenshot to find play button
             with mss.mss() as sct:
@@ -460,36 +598,43 @@ class AnimeVanguardsKeeper:
                 # Convert to BGR for OpenCV
                 img_bgr = cv2.cvtColor(img_np, cv2.COLOR_RGB2BGR)
 
-                # Define blue color range (for the play button)
-                lower_blue = np.array([180, 100, 30])  # BGR format
-                upper_blue = np.array([255, 200, 80])
+                button_votes = []
 
-                # Create mask for blue color
-                mask = cv2.inRange(img_bgr, lower_blue, upper_blue)
+                # Method 1: Bright blue detection (primary blue tone)
+                blue_loc1 = self.detect_blue_button_method1(img_bgr)
+                if blue_loc1:
+                    button_votes.append(('bright_blue', blue_loc1))
+                    self.log_message(f"✅ Bright blue detected at {blue_loc1}", "INFO")
 
-                # Find contours
-                contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                # Method 2: HSV blue detection (better for gradients)
+                blue_loc2 = self.detect_blue_button_method2(img_bgr)
+                if blue_loc2:
+                    button_votes.append(('hsv_blue', blue_loc2))
+                    self.log_message(f"✅ HSV blue detected at {blue_loc2}", "INFO")
 
-                if contours:
-                    # Find largest blue area (likely the play button)
-                    largest_contour = max(contours, key=cv2.contourArea)
-                    M = cv2.moments(largest_contour)
+                # Method 3: Rectangle shape detection (buttons are rectangular)
+                rect_loc = self.detect_button_by_shape(img_bgr)
+                if rect_loc:
+                    button_votes.append(('rectangle', rect_loc))
+                    self.log_message(f"✅ Rectangle shape detected at {rect_loc}", "INFO")
 
-                    if M["m00"] != 0:
-                        cx = int(M["m10"] / M["m00"])
-                        cy = int(M["m01"] / M["m00"])
+                # Voting system
+                if button_votes:
+                    avg_x = sum(loc[0] for _, loc in button_votes) // len(button_votes)
+                    avg_y = sum(loc[1] for _, loc in button_votes) // len(button_votes)
 
-                        # Click the play button
-                        click_x = window_info['x'] + cx
-                        click_y = window_info['y'] + cy
+                    click_x = window_info['x'] + avg_x
+                    click_y = window_info['y'] + avg_y
 
-                        self.log_message(f"✓ Found play button at: ({click_x}, {click_y})", "INFO")
-                        pyautogui.click(click_x, click_y)
-                        time.sleep(2)
+                    self.log_message(f"🎯 PLAY BUTTON: {len(button_votes)} methods agree!", "INFO")
+                    self.log_message(f"✓ Clicking play button at: ({click_x}, {click_y})", "INFO")
 
-                        self.log_message("✓ Game launch sequence completed", "INFO")
-                        self.log_stats("AUTO_RELAUNCH", f"Rejoined {self.config.get('game_name', 'game')}")
-                        return True
+                    pyautogui.click(click_x, click_y)
+                    time.sleep(2)
+
+                    self.log_message("✓ Game launch sequence completed", "INFO")
+                    self.log_stats("AUTO_RELAUNCH", f"Rejoined {self.config.get('game_name', 'game')}")
+                    return True
 
                 # Fallback: click in lower-right area where play button usually is
                 center_x = window_info['x'] + (window_info['width'] // 2)
@@ -507,6 +652,100 @@ class AnimeVanguardsKeeper:
         except Exception as e:
             self.log_message(f"Error clicking play button: {e}", "ERROR")
             return False
+
+    def detect_blue_button_method1(self, img):
+        """Detect bright blue button (BGR method)"""
+        try:
+            # Multiple blue ranges for better detection
+            lower_blue1 = np.array([180, 100, 30])
+            upper_blue1 = np.array([255, 200, 100])
+
+            mask1 = cv2.inRange(img, lower_blue1, upper_blue1)
+
+            lower_blue2 = np.array([150, 80, 40])
+            upper_blue2 = np.array([255, 180, 80])
+
+            mask2 = cv2.inRange(img, lower_blue2, upper_blue2)
+
+            # Combine masks
+            mask = cv2.bitwise_or(mask1, mask2)
+
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            if contours:
+                # Find largest blue area with reasonable size
+                valid_contours = [c for c in contours if 500 < cv2.contourArea(c) < 50000]
+
+                if valid_contours:
+                    largest = max(valid_contours, key=cv2.contourArea)
+                    M = cv2.moments(largest)
+
+                    if M["m00"] != 0:
+                        cx = int(M["m10"] / M["m00"])
+                        cy = int(M["m01"] / M["m00"])
+                        return (cx, cy)
+
+            return None
+        except:
+            return None
+
+    def detect_blue_button_method2(self, img):
+        """Detect blue button using HSV (better for gradients)"""
+        try:
+            hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+            # Blue hue range in HSV
+            lower_blue = np.array([100, 100, 100])
+            upper_blue = np.array([130, 255, 255])
+
+            mask = cv2.inRange(hsv, lower_blue, upper_blue)
+
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            if contours:
+                valid_contours = [c for c in contours if 500 < cv2.contourArea(c) < 50000]
+
+                if valid_contours:
+                    largest = max(valid_contours, key=cv2.contourArea)
+                    M = cv2.moments(largest)
+
+                    if M["m00"] != 0:
+                        cx = int(M["m10"] / M["m00"])
+                        cy = int(M["m01"] / M["m00"])
+                        return (cx, cy)
+
+            return None
+        except:
+            return None
+
+    def detect_button_by_shape(self, img):
+        """Detect button by rectangular shape"""
+        try:
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            edges = cv2.Canny(gray, 50, 150)
+
+            contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            for contour in contours:
+                # Approximate the contour to a polygon
+                peri = cv2.arcLength(contour, True)
+                approx = cv2.approxPolyDP(contour, 0.02 * peri, True)
+
+                # If it has 4 sides (rectangle) and reasonable size
+                if len(approx) == 4:
+                    area = cv2.contourArea(contour)
+                    if 500 < area < 50000:
+                        # Get bounding box
+                        x, y, w, h = cv2.boundingRect(contour)
+
+                        # Check aspect ratio (buttons are usually wider than tall)
+                        aspect_ratio = w / float(h)
+                        if 1.5 < aspect_ratio < 5:  # Button-like ratio
+                            return (x + w//2, y + h//2)
+
+            return None
+        except:
+            return None
 
     def auto_relaunch_sequence(self):
         """Complete auto-relaunch sequence when Roblox crashes"""
