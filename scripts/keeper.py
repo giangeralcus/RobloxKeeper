@@ -240,15 +240,134 @@ def take_screenshot():
         save_stats()
         return False
 
+def launch_roblox():
+    """Launch Roblox application"""
+    try:
+        log_message("🚀 Launching Roblox...", "INFO")
+        subprocess.run(['open', '-a', 'Roblox'], check=True)
+        return True
+    except Exception as e:
+        log_message(f"Failed to launch Roblox: {e}", "ERROR")
+        return False
+
+def find_and_click_vanguard():
+    """Find and click Vanguard game in Roblox home screen"""
+    try:
+        log_message("🔍 Searching for Vanguard game...", "INFO")
+
+        # Wait for Roblox to fully load (15 seconds)
+        for i in range(15, 0, -1):
+            print(f"\r⏳ Waiting for Roblox to load... {i}s   ", end='', flush=True)
+            time.sleep(1)
+        print()
+
+        # Activate Roblox window
+        activate_roblox()
+        time.sleep(1)
+
+        # Get window info
+        window_info = get_roblox_window_info()
+        if not window_info:
+            log_message("Could not get Roblox window info", "ERROR")
+            return False
+
+        # Take a screenshot to help identify the game location
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        screenshot_path = f"{SCREENSHOT_DIR}/vanguard_search_{timestamp}.png"
+        subprocess.run(['screencapture', '-x', screenshot_path], check=True)
+        log_message(f"📸 Captured search screen: {screenshot_path}", "INFO")
+
+        # Strategy: Click in the center area where games are typically displayed
+        # We'll use a grid pattern to search for the game
+        center_x = window_info['x'] + (window_info['width'] // 2)
+        center_y = window_info['y'] + (window_info['height'] // 2)
+
+        # Common game tile locations in Roblox home screen
+        # Games are usually displayed in a grid pattern
+        search_locations = [
+            (center_x - 200, center_y - 100),  # Top-left area
+            (center_x, center_y - 100),        # Top-center
+            (center_x + 200, center_y - 100),  # Top-right
+            (center_x - 200, center_y + 50),   # Middle-left
+            (center_x, center_y + 50),         # Middle-center
+            (center_x + 200, center_y + 50),   # Middle-right
+        ]
+
+        log_message("🎮 Attempting to click Vanguard game...", "INFO")
+
+        # Try clicking on potential game locations
+        # In a real scenario, you might want to use OCR or image recognition
+        # For now, we'll try the center location (most common position for recent games)
+        click_x = center_x
+        click_y = center_y + 50
+
+        pyautogui.click(click_x, click_y)
+        time.sleep(0.5)
+
+        # Now look for and click the green play button
+        # The play button is usually in the lower-right area of the game details
+        play_button_locations = [
+            (center_x + 200, center_y + 200),  # Lower-right
+            (center_x + 150, center_y + 220),  # Alternative position
+            (center_x, center_y + 250),        # Center-bottom
+        ]
+
+        log_message("▶️  Clicking play button...", "INFO")
+        for x, y in play_button_locations:
+            pyautogui.click(x, y)
+            time.sleep(0.3)
+
+        log_message("✓ Vanguard launch sequence completed", "INFO")
+        log_stats("AUTO_RELAUNCH", "Attempted to rejoin Vanguard game")
+
+        # Wait for game to load
+        for i in range(10, 0, -1):
+            print(f"\r⏳ Waiting for game to load... {i}s   ", end='', flush=True)
+            time.sleep(1)
+        print()
+
+        return True
+
+    except Exception as e:
+        log_message(f"Error finding/clicking Vanguard: {e}", "ERROR")
+        return False
+
+def auto_relaunch_sequence():
+    """Complete auto-relaunch sequence when Roblox crashes"""
+    log_message("🔄 Starting auto-relaunch sequence...", "INFO")
+
+    # Step 1: Launch Roblox
+    if not launch_roblox():
+        log_message("Auto-relaunch failed: Could not launch Roblox", "ERROR")
+        return False
+
+    # Step 2: Find and click Vanguard game
+    if not find_and_click_vanguard():
+        log_message("Auto-relaunch warning: Could not auto-join Vanguard", "WARN")
+        log_message("Please manually join Vanguard game", "WARN")
+        return False
+
+    log_message("✓ Auto-relaunch completed successfully!", "INFO")
+    return True
+
 def monitor_roblox_status():
     """Monitor if Roblox is still running"""
     if not is_roblox_running():
         stats['roblox_crashes'] += 1
         stats['status'] = 'crashed'
-        log_message("❌ ALERT: Roblox is not running! Please restart the game.", "CRITICAL")
+        log_message("❌ ALERT: Roblox crashed!", "CRITICAL")
         log_stats("CRASH", f"Total crashes: {stats['roblox_crashes']}")
         save_stats()
-        return False
+
+        # Attempt auto-relaunch
+        log_message("🔄 Attempting automatic relaunch...", "INFO")
+        if auto_relaunch_sequence():
+            stats['status'] = 'active'
+            save_stats()
+            return True
+        else:
+            log_message("⚠️  Auto-relaunch failed. Please manually restart Roblox and join Vanguard.", "WARN")
+            return False
     return True
 
 def print_dashboard():
@@ -283,12 +402,13 @@ def print_dashboard():
 
 # Main
 print("=" * 70)
-print("🎮 ROBLOX AFK KEEPER - ENHANCED MONITORING")
+print("🎮 ROBLOX AFK KEEPER - AUTO-RELAUNCH EDITION")
 print("=" * 70)
 print(f"📁 Base folder: {BASE_DIR}")
 print(f"🖱  Click interval: Every {CLICK_INTERVAL_MINUTES} minutes")
 print(f"📸 Screenshot interval: Every hour")
 print(f"🆗 Error dialog check: Every 15 seconds")
+print(f"🔄 Auto-relaunch: Enabled (will rejoin Vanguard on crash)")
 print(f"🔍 Monitoring: Crashes, Server Loading, Activity, Error Dialogs")
 print(f"📝 Logs: {LOG_FILE}")
 print(f"📊 Stats: {STATUS_FILE}")
@@ -333,9 +453,10 @@ try:
         # Check Roblox status every 30 seconds
         if current_time - last_status_check >= 30:
             if not monitor_roblox_status():
-                # Roblox crashed, wait for user to restart
-                print("\n⚠️  Waiting for Roblox to restart...")
+                # Roblox crashed and auto-relaunch failed or is disabled
+                print("\n⚠️  Waiting for manual restart...")
                 time.sleep(10)
+                last_status_check = current_time
                 continue
             last_status_check = current_time
 

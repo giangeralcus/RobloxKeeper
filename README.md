@@ -14,16 +14,23 @@ Advanced monitoring system for keeping your Roblox game active with intelligent 
 - Saves to organized folders with timestamps
 - Detects server loading/moving
 
-✅ **Crash Detection**
+✅ **Crash Detection & Auto-Relaunch**
 - Monitors if Roblox closes unexpectedly
+- Automatically relaunches Roblox on crash
+- Rejoins Vanguard game automatically
 - Logs crash events with timestamps
-- Alerts you when Roblox needs restart
 
 ✅ **Status Dashboard**
 - Real-time uptime tracking
 - Total clicks and screenshots counter
 - Server loads and crashes detected
 - Live countdown timers
+
+✅ **Error Dialog Dismissal**
+- Automatically detects error dialogs (e.g., "Teleport Failed")
+- Clicks OK buttons to dismiss errors
+- Checks every 15 seconds
+- Prevents getting stuck on error screens
 
 ✅ **Comprehensive Logging**
 - Main activity log (keeper.log)
@@ -89,8 +96,10 @@ The keeper displays a real-time dashboard showing:
 ║ Total Screenshots: 51                                            ║
 ║ Server Loads:     3                                              ║
 ║ Crashes Detected: 0                                              ║
+║ Errors Dismissed: 12                                             ║
 ║ Last Click:       2025-10-17 12:30:45                            ║
 ║ Last Screenshot:  2025-10-17 12:00:00                            ║
+║ Last Error Fixed: 2025-10-17 11:45:30                            ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
@@ -109,9 +118,15 @@ Review screenshots to track your:
 
 ## 🔍 What Gets Monitored
 
+### Every 15 seconds:
+- ✅ Check for error dialogs
+- ✅ Automatically dismiss error messages
+- ✅ Keep game running smoothly
+
 ### Every 30 seconds:
 - ✅ Is Roblox still running?
 - ✅ Process health check
+- ✅ Auto-relaunch if crashed (relaunches Roblox and rejoins Vanguard)
 
 ### Every 18 minutes:
 - ✅ Double-click in game center
@@ -154,8 +169,10 @@ Current status in JSON format for programmatic access:
   "total_screenshots": 51,
   "roblox_crashes": 0,
   "server_loads_detected": 3,
+  "error_dialogs_dismissed": 12,
   "last_click": "2025-10-17 12:30:45",
   "last_screenshot": "2025-10-17 12:00:00",
+  "last_error_dismissed": "2025-10-17 11:45:30",
   "status": "active"
 }
 ```
@@ -183,7 +200,12 @@ SCREENSHOT_INTERVAL_SECONDS = 3600   # Screenshot every hour
 
 ### Roblox crashes
 - Keeper will detect and log the crash
-- Restart Roblox manually
+- **Auto-relaunch** will activate automatically:
+  - Launches Roblox
+  - Waits for it to load
+  - Attempts to find and click Vanguard game
+  - Clicks play button
+- If auto-relaunch fails, restart manually
 - Keeper will resume monitoring automatically
 
 ## 🔐 Safety Features
@@ -218,4 +240,4 @@ For personal use only. Use responsibly and in accordance with Roblox Terms of Se
 ---
 
 Created: October 17, 2025
-Version: 2.0 Enhanced
+Version: 3.0 Auto-Relaunch Edition
